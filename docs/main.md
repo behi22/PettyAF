@@ -367,9 +367,35 @@ Consent Roast SMS opt-in ("Reply YES to be served, or LOL to dispute"), auto-esc
 
 ## 14.5 Build log (live, newest first)
 
+- **2026-06-05: engine payload confirmed + live org config locked.** Verified field-by-field what every call sends (see section 16). Outcomes: **guardrails are OFF** (they come ONLY from `KnowledgeBase.metadata.unknowns`, which is null, so no `guardrails` array is sent); **goal re-aligned** from blank `appointment` to an explicit payment-commitment description that tells the agent NOT to book a calendar slot; qualification questions/rubric are empty (no platform-side excuse extraction, fine for now). KB replaced with the ~16k-char fun Field Manual (cruder, UI-woven: Wall of Shame, Cooperation Meter, Unhinged Level, Relentless counter, Exhibit A, status stamps, Sal). All 3 agents live with flipped permissive prompts; medieval voice = `HAvvFKatz0uu0Fv55Riy`. Vercel deploy config + `backend/.env` ready (.env gitignored).
+
 - **2026-06-05: FE prototype scaffolded and building.** `frontend/` = Vite + React 18 + plain CSS, no router/UI libs. Four screens: Dashboard, New Case wizard, Live Calls control room (per the approved dark mock, EMERGENCY STOP included), Archive. **Mock mode is default**: `src/mockEngine.js` simulates the whole backend in-browser (fake calls with streaming transcripts, relentless redials, emergency stop) so the UI runs with zero servers. Flip `VITE_USE_MOCK=false` to hit the real backend on :4000; `src/api.js` already speaks the exact routes from plan 06 section 8 (`/api/cases`, `/api/cases/:id/deploy`, `/api/cases/:id/relentless`, `/api/live`, `/api/live/stop`, `/api/dashboard`). Run: `cd frontend && npm install && npm run dev` then open http://localhost:5173.
 - **2026-06-05: staging org live.** Org `PettyAF` (`d5078339-f3b0-4cbb-a0bb-2e4e9df75f1d`), org-admin login works, KB created (`docs/07-knowledge-base.md` has the id). Login returns `data.token` NOT `data.accessToken`; KB create returns the raw entity unwrapped. **Engine URL decision: use `https://dev.voice.alebex.ai`** (the staging stack pairs with the dev engine: BexAi `deploy-staging-frontend.yml` pins `VITE_VOICE_ENGINE_URL=https://dev.voice.alebex.ai` while prod deploy pins `voice.alebex.ai`, and the voice repo's CI runs against dev.voice). Mint the `VOICE_ENGINE_API_KEY` on `dev.voice.alebex.ai/docs/keys` (+ New Key, name it `pettyaf`). Functional confirmation = verify-first B: the callId from a staging test-call must resolve on `dev.voice.alebex.ai/call/status/{id}`.
 - **2026-06-05: roster locked to 3 personas** (`child`, `medieval`, `angry`), prompts in `docs/prompts/`. Agents not yet created on staging; `PERSONA_AGENT_MAP` ids pending.
+
+## 16. What the engine actually receives per call (confirmed against BexAi source)
+
+Every `POST /leads/test-call` builds `assistantOverrides.variableValues` from these sources
+(traced in `alebex-voice-json-payload-builder.service.ts` + `communication-helper.service.ts`):
+
+| Field | Source | PettyAF state |
+|---|---|---|
+| `customPrompt` (system prompt) | Agent base prompt + our `customPrompt` + per-call context | the 3 persona prompts |
+| `knowledge_base` | org KB content + KB `metadata.unknowns` | the Field Manual (`docs/08`) |
+| `guardrails` | ONLY `KnowledgeBase.metadata.unknowns` | **none** (metadata null → field omitted) |
+| `goalContext` | `Goal.goalDescription` | payment-commitment text (no calendar booking) |
+| `goalInstructions` | `Goal.goalType` (appointment\|link) | `appointment` (enum-forced; description overrides intent) |
+| `qualifyingQuestions` | QualificationQuestion entity | empty `[]` |
+| `qualificationRubric` | Lead → org default → empty | empty |
+| `leadInfo` | Lead fields + customFields (debt facts) | debt_amount/reason/since/etc. |
+| `conversationHistory` | prior ConversationMessages / aiSummary | grows across redials |
+| `calendar_reference` | org timezone + schedule | auto (unused by us) |
+
+Key facts: Goal is REQUIRED (the builder throws if missing), so we keep a goal but its
+`goalType` enum only allows `appointment` or `link`; we neutralize the appointment behavior via
+`goalDescription`. Guardrails have exactly one source (KB `metadata.unknowns`); keeping that
+empty guarantees zero guardrails. To re-enable excuse extraction later, add QualificationQuestions
+(admitted_debt / excuse_given / payment_commitment) + a rubric.
 
 ## 15. Safety notes
 
