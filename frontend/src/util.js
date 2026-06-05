@@ -35,8 +35,8 @@ export function clockFromSeconds(total) {
 export const PERSONAS = {
   child: {
     key: 'child',
-    name: 'Timmy the Tiny Collector',
-    shortName: 'TIMMY',
+    name: 'Penny the Tiny Collector',
+    shortName: 'PENNY',
     vibe: 'Six years old. A PROFESSIONAL.',
     sample: 'My notebook says you owe seven dollars. My notebook NEVER lies.',
   },

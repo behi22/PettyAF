@@ -19,7 +19,7 @@ const SCRIPTS = {
     lines: [
       { who: 'ai', text: "Hiiii! Is this {debtor}? It IS? I found you! I'm so good at this!" },
       { who: 'debtor', text: 'Uh. Who is this?' },
-      { who: 'ai', text: "It's TIMMY. From PettyAF. I'm a PROFESSIONAL. You have my {amount}!" },
+      { who: 'ai', text: "It's PENNY. From PettyAF. I'm a PROFESSIONAL. You have my {amount}!" },
       { who: 'debtor', text: '...the money for {reason}? Seriously?' },
       { who: 'ai', text: '{reason}. Like seven recesses ago. My notebook says so and my notebook NEVER lies.' },
       { who: 'debtor', text: 'Venmo is down right now.' },
@@ -301,7 +301,7 @@ function runGhostCall(callId, c) {
 
 function runScriptedCall(callId, c) {
   const script = SCRIPTS[c.personaKey] || SCRIPTS.angry
-  const persona = c.personaKey === 'child' ? 'TIMMY' : c.personaKey === 'medieval' ? 'REGINALD' : 'TONY'
+  const persona = c.personaKey === 'child' ? 'PENNY' : c.personaKey === 'medieval' ? 'REGINALD' : 'TONY'
   const debtorShort = c.debtorName.split(' ')[0].toUpperCase()
   const lc = state.live.get(callId)
 

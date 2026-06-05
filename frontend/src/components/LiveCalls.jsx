@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { api, USE_MOCK } from '../api.js'
+import { api } from '../api.js'
 import { Panel, BlockMeter, Waveform } from './Widgets.jsx'
 import EmergencyStop from './EmergencyStop.jsx'
 import { PERSONAS, caseNumber, money, clockFromSeconds, sentimentCaption, transcriptLines } from '../util.js'
@@ -18,7 +18,6 @@ export default function LiveCalls({ live, cases, onChanged, notify }) {
   const focused = live.calls.find((c) => ['dialing', 'talking', 'analyzing'].includes(c.phase)) || live.calls[0] || null
   const focusedCase = focused ? cases.find((c) => c.id === focused.caseId) : null
   const [autoScroll, setAutoScroll] = useState(true)
-  const [ending, setEnding] = useState(false)
   const scrollRef = useRef(null)
   // real backend names the live field partialTranscript (plan 06 section 7.3); mock uses transcript
   const lines = focused ? transcriptLines(focused.partialTranscript ?? focused.transcript) : []
@@ -234,29 +233,8 @@ export default function LiveCalls({ live, cases, onChanged, notify }) {
         </div>
       </div>
 
-      {/* bottom controls */}
+      {/* bottom control: emergency stop only */}
       <div className="live-bottom">
-        <button
-          className="endcall"
-          disabled={!focused || focused.phase === 'done' || !USE_MOCK || ending}
-          title={USE_MOCK ? '' : 'No hangup API on the platform. The persona wraps up on its own.'}
-          onClick={async () => {
-            const callId = focused?.callId
-            if (!callId || ending) return
-            setEnding(true)
-            try {
-              await api.endCall(callId)
-              onChanged()
-            } catch (e) {
-              notify(e.message)
-            } finally {
-              setEnding(false)
-            }
-          }}
-        >
-          <span className="endcall-title">END CALL</span>
-          <span className="endcall-sub">Wrap it up, champ.</span>
-        </button>
         <EmergencyStop
           stopped={live.stopped}
           onStop={async () => {

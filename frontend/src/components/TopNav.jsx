@@ -1,4 +1,5 @@
 import React from 'react'
+import Logo from './Logo.jsx'
 
 const TABS = [
   ['dashboard', 'Dashboard'],
@@ -11,6 +12,7 @@ export default function TopNav({ tab, onTab, liveNow, stopped, mock }) {
   return (
     <header className="topnav">
       <div className="brand" onClick={() => onTab('dashboard')}>
+        <Logo size={38} />
         <span className="brand-word">
           Petty<span className="brand-af">AF</span>
         </span>
