@@ -8,7 +8,7 @@ const TABS = [
   ['archive', 'Archive'],
 ]
 
-export default function TopNav({ tab, onTab, liveNow, stopped, mock }) {
+export default function TopNav({ tab, onTab, liveNow, stopped, mock, onLogout }) {
   return (
     <header className="topnav">
       <div className="brand" onClick={() => onTab('dashboard')}>
@@ -43,6 +43,11 @@ export default function TopNav({ tab, onTab, liveNow, stopped, mock }) {
         <button className="btn-red" onClick={() => onTab('newcase')}>
           OPEN NEW CASE
         </button>
+        {onLogout && (
+          <button className="link-btn" onClick={onLogout} title="Clock out">
+            CLOCK OUT
+          </button>
+        )}
       </div>
     </header>
   )

@@ -349,20 +349,30 @@ async function deploy(s: EngineState, lead: any): Promise<void> {
   }
 }
 
+// Re-entrancy guard: a slow status request (up to httpTimeoutMs) can outlast the poll
+// interval, so skip starting a new request for a call that already has one in flight.
+const pollingNow = new Set<string>();
+
 async function pollCall(s: EngineState, leadId: string, callId: string): Promise<void> {
-  const st = await getCallStatus(callId);
-  if (!st) return; // transient; retry next interval
-  const status = (st.status || '').toLowerCase();
-  if (status === 'queued' || status === 'ringing') {
-    liveRegistry.update(callId, { phase: 'dialing' });
-    return;
-  }
-  if (status === 'in-progress') {
-    liveRegistry.update(callId, { phase: 'talking' });
-    return;
-  }
-  if (status === 'ended' || status === 'completed' || status === 'failed' || st.endedReason) {
-    await finishCall(s, leadId, callId, st);
+  if (pollingNow.has(callId)) return;
+  pollingNow.add(callId);
+  try {
+    const st = await getCallStatus(callId);
+    if (!st) return; // transient; retry next interval
+    const status = (st.status || '').toLowerCase();
+    if (status === 'queued' || status === 'ringing') {
+      liveRegistry.update(callId, { phase: 'dialing' });
+      return;
+    }
+    if (status === 'in-progress') {
+      liveRegistry.update(callId, { phase: 'talking' });
+      return;
+    }
+    if (status === 'ended' || status === 'completed' || status === 'failed' || st.endedReason) {
+      await finishCall(s, leadId, callId, st);
+    }
+  } finally {
+    pollingNow.delete(callId);
   }
 }
 

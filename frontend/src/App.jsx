@@ -5,8 +5,10 @@ import Dashboard from './components/Dashboard.jsx'
 import NewCase from './components/NewCase.jsx'
 import LiveCalls from './components/LiveCalls.jsx'
 import Archive from './components/Archive.jsx'
+import Login from './components/Login.jsx'
 
 export default function App() {
+  const [authed, setAuthed] = useState(() => sessionStorage.getItem('paf_auth') === '1')
   const [tab, setTab] = useState('dashboard')
   const [cases, setCases] = useState([])
   const [live, setLive] = useState({ calls: [], liveNow: 0, stopped: false, queued: [] })
@@ -94,9 +96,25 @@ export default function App() {
     archive: <Archive cases={cases} onChanged={refreshCases} notify={notify} />,
   }
 
+  if (!authed) {
+    return (
+      <Login
+        onAuthed={() => {
+          sessionStorage.setItem('paf_auth', '1')
+          setAuthed(true)
+        }}
+      />
+    )
+  }
+
+  const logout = () => {
+    sessionStorage.removeItem('paf_auth')
+    setAuthed(false)
+  }
+
   return (
     <div className="app">
-      <TopNav tab={tab} onTab={setTab} liveNow={live.liveNow} stopped={live.stopped} mock={USE_MOCK} />
+      <TopNav tab={tab} onTab={setTab} liveNow={live.liveNow} stopped={live.stopped} mock={USE_MOCK} onLogout={logout} />
       {live.stopped && (
         <div className="stop-strip">
           EMERGENCY STOP ENGAGED. All new dialing halted. Mercy has been granted.

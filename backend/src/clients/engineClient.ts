@@ -23,7 +23,7 @@ export async function getCallStatus(callId: string): Promise<EngineStatus | null
   try {
     const res = await axios.get(`${env.engine.url}/call/status/${encodeURIComponent(callId)}`, {
       headers: { 'X-API-Key': env.engine.apiKey },
-      timeout: 10000,
+      timeout: env.engine.httpTimeoutMs,
     });
     const c = res.data || {};
     return {
@@ -35,7 +35,9 @@ export async function getCallStatus(callId: string): Promise<EngineStatus | null
       raw: c,
     };
   } catch (e: any) {
-    console.log(`[engine] GET /call/status/${callId} -> ${e.response?.status ?? 'ERR'} ${e.message}`);
+    // Non-fatal: the poller retries on the next interval. Timeouts on the dev engine are common.
+    const reason = e.code === 'ECONNABORTED' ? `timeout (${env.engine.httpTimeoutMs}ms), will retry` : e.message;
+    console.log(`[engine] GET /call/status/${callId} -> ${e.response?.status ?? 'ERR'} ${reason}`);
     return null;
   }
 }

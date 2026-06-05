@@ -869,6 +869,176 @@ input {
 
 /* ------------------------------------------------ responsive sanity */
 
+/* ------------------------------------------------ login gate */
+
+.login-screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(1100px 600px at 50% -10%, rgba(255, 68, 56, 0.16), transparent 60%),
+    radial-gradient(900px 500px at 50% 120%, rgba(255, 68, 56, 0.1), transparent 60%),
+    var(--bg);
+  overflow: hidden;
+}
+
+/* CRT scanlines */
+.login-scan {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.025) 0 1px,
+    transparent 1px 3px
+  );
+  animation: scan 6s linear infinite;
+  opacity: 0.5;
+}
+@keyframes scan {
+  from { background-position-y: 0; }
+  to { background-position-y: 100px; }
+}
+
+/* floating dollar signs */
+.login-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.login-bg span {
+  position: absolute;
+  bottom: -40px;
+  left: calc((var(--i) + 1) * 6.5%);
+  font-family: var(--display);
+  font-size: calc(20px + (var(--i) * 3px) % 30px);
+  color: rgba(255, 68, 56, 0.13);
+  animation: floatup calc(9s + (var(--i) * 1.3s)) linear infinite;
+  animation-delay: calc(var(--i) * -1.7s);
+}
+@keyframes floatup {
+  0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(-110vh) rotate(220deg); opacity: 0; }
+}
+
+.login-card {
+  position: relative;
+  z-index: 2;
+  width: 420px;
+  max-width: 92vw;
+  background: var(--panel);
+  border: 1px solid var(--line2);
+  border-radius: 14px;
+  padding: 34px 30px 24px;
+  text-align: center;
+  box-shadow: 0 0 60px rgba(255, 68, 56, 0.18), 0 30px 80px rgba(0, 0, 0, 0.6);
+}
+
+.login-rec {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: var(--red);
+}
+
+.login-logo { margin-bottom: 12px; }
+
+.login-title {
+  font-family: var(--display);
+  font-size: 40px;
+  margin: 0;
+  color: #fff;
+  letter-spacing: 0.5px;
+}
+
+.login-sub {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  margin: 8px 0 22px;
+  font-weight: 700;
+}
+
+.login-field {
+  display: block;
+  text-align: left;
+  margin-bottom: 14px;
+}
+.login-field span {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 1.8px;
+  color: var(--muted);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.login-field input {
+  width: 100%;
+  background: var(--bg2);
+  border: 1px solid var(--line2);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 14px;
+  padding: 12px 13px;
+  outline: none;
+}
+.login-field input:focus {
+  border-color: var(--red);
+  box-shadow: 0 0 0 3px rgba(255, 68, 56, 0.12);
+}
+
+.login-btn {
+  width: 100%;
+  margin-top: 6px;
+  background: var(--red2);
+  color: #fff;
+  border: none;
+  border-radius: 9px;
+  padding: 14px;
+  font-family: var(--display);
+  font-size: 17px;
+  letter-spacing: 2px;
+  box-shadow: 0 0 28px rgba(255, 68, 56, 0.35);
+  transition: filter 0.15s ease;
+}
+.login-btn:hover:not(:disabled) { filter: brightness(1.1); }
+.login-btn:disabled { opacity: 0.85; cursor: progress; letter-spacing: 0.5px; font-size: 13px; font-family: var(--mono); }
+
+.login-err {
+  color: var(--red);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin: 14px 0 0;
+}
+
+.login-foot {
+  font-size: 10px;
+  color: var(--dim);
+  letter-spacing: 0.4px;
+  margin: 16px 0 0;
+}
+
+.shake { animation: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+@keyframes shake {
+  10%, 90% { transform: translateX(-2px); }
+  20%, 80% { transform: translateX(4px); }
+  30%, 50%, 70% { transform: translateX(-8px); }
+  40%, 60% { transform: translateX(8px); }
+}
+
 @media (max-width: 1200px) {
   .kpi-grid { grid-template-columns: repeat(3, 1fr); }
   .live-grid { grid-template-columns: 1fr; }
