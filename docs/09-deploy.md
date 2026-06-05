@@ -4,7 +4,7 @@
 
 - Vercel project: **`pettyaf-web`** (scope behbod-babais-projects).
 - Production URL: `https://pettyaf-h0171jok1-behbod-babais-projects.vercel.app` (new immutable URL each deploy; the project's stable domain shows in the dashboard).
-- Login gate: `behbod.babai.aic@gmail.com` / `***REDACTED***`. Mock mode (no backend) on the public link.
+- Login gate: credentials live in the local env and are shared privately, never committed. Mock mode (no backend) on the public link.
 - REQUIRED once in the dashboard: Project → Settings → Deployment Protection → set Vercel Authentication to **Disabled**, or the site returns 401 to the public.
 
 ### How it was deployed (and how to redeploy)
