@@ -35,9 +35,11 @@ export const env = {
     url: process.env.VOICE_ENGINE_URL || 'https://voice.alebex.ai',
     apiKey: process.env.VOICE_ENGINE_API_KEY || '',
     // dev voice engine status polls can be slow; 10s was too tight and logged timeouts.
-    // 30s gives a slow response time to land; the per-call poller has a re-entrancy guard
-    // so a long request never piles up. Override with ENGINE_HTTP_TIMEOUT_MS.
-    httpTimeoutMs: num('ENGINE_HTTP_TIMEOUT_MS', 30000),
+    // 60s is the practical ceiling: it lets even a very slow response land instead of erroring,
+    // and the per-call poller has a re-entrancy guard so a long request never piles up. Beyond
+    // this, a bigger number does not help (a real >60s hang is an engine problem, not a timeout
+    // problem). Override with ENGINE_HTTP_TIMEOUT_MS.
+    httpTimeoutMs: num('ENGINE_HTTP_TIMEOUT_MS', 60000),
   },
   webhookLeads: {
     url: process.env.WEBHOOK_LEADS_INGEST_URL || '',
