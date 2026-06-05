@@ -1,5 +1,31 @@
 # Deploy: frontend on Vercel, backend local
 
+## STATUS (2026-06-05): LIVE
+
+- Vercel project: **`pettyaf-web`** (scope behbod-babais-projects).
+- Production URL: `https://pettyaf-h0171jok1-behbod-babais-projects.vercel.app` (new immutable URL each deploy; the project's stable domain shows in the dashboard).
+- Login gate: `behbod.babai.aic@gmail.com` / `***REDACTED***`. Mock mode (no backend) on the public link.
+- REQUIRED once in the dashboard: Project → Settings → Deployment Protection → set Vercel Authentication to **Disabled**, or the site returns 401 to the public.
+
+### How it was deployed (and how to redeploy)
+
+The Vercel CLI auto-detects this monorepo and keeps injecting a `backend` service into
+`vercel.json`, which breaks the build ("backend stays local"). The reliable workaround is to
+deploy the **prebuilt static output from a temp dir outside the repo**:
+
+```bash
+cd frontend && npm run build
+D="$TEMP/pettyaf-web"; rm -rf "$D"; mkdir -p "$D"; cp -r frontend/dist/. "$D/"
+cd "$D" && npx vercel link --yes --project pettyaf-web && npx vercel --prod --yes
+```
+
+(Old broken projects `pettyaf` and `pettyaf-collections` have framework "services" and can be
+deleted in the dashboard.) The committed `vercel.json` + `.vercelignore` (which excludes
+`backend`) are kept for a future dashboard import; they are not used by the static CLI deploy.
+
+---
+
+
 Chosen setup: the React frontend is hosted free on Vercel; the Express backend runs on the
 demo laptop. The deployed page can reach `http://localhost:4000` because browsers exempt
 localhost from mixed-content blocking, so an HTTPS Vercel page may call a local HTTP backend
