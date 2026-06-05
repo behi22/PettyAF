@@ -23,6 +23,14 @@ const LOADERS = [
   'Sharpening the pencils...',
   'Consulting our legal team (we have none)...',
 ]
+const FOOTERS = [
+  'Three failed logins and we call your mom. We have her number.',
+  'This terminal has collected from people much scarier than you.',
+  'By clocking in you consent to caring deeply about seven dollars.',
+  'Trespassers are added to the Wall of Shame and the group chat.',
+  'Sal is watching. Sal is always watching. Sal is also the goose.',
+  'Unauthorized access voids your dignity. Our warranty is fine.',
+]
 
 async function sha256hex(s) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s))
@@ -37,6 +45,7 @@ export default function Login({ onAuthed }) {
   const [loaderLine, setLoaderLine] = useState('')
   const attempts = useRef(0)
   const cardRef = useRef(null)
+  const [footer] = useState(() => FOOTERS[Math.floor(Math.random() * FOOTERS.length)])
 
   const submit = async (e) => {
     e.preventDefault()
@@ -114,9 +123,7 @@ export default function Login({ onAuthed }) {
         </button>
 
         {err && <p className="login-err">{err}</p>}
-        <p className="login-foot">
-          Unauthorized access will be met with a strongly worded sonnet. And Sal.
-        </p>
+        <p className="login-foot">{footer}</p>
       </form>
     </div>
   )

@@ -34,8 +34,10 @@ export const env = {
   engine: {
     url: process.env.VOICE_ENGINE_URL || 'https://voice.alebex.ai',
     apiKey: process.env.VOICE_ENGINE_API_KEY || '',
-    // dev voice engine status polls can be slow; 10s was too tight and logged timeouts
-    httpTimeoutMs: num('ENGINE_HTTP_TIMEOUT_MS', 20000),
+    // dev voice engine status polls can be slow; 10s was too tight and logged timeouts.
+    // 30s gives a slow response time to land; the per-call poller has a re-entrancy guard
+    // so a long request never piles up. Override with ENGINE_HTTP_TIMEOUT_MS.
+    httpTimeoutMs: num('ENGINE_HTTP_TIMEOUT_MS', 30000),
   },
   webhookLeads: {
     url: process.env.WEBHOOK_LEADS_INGEST_URL || '',
