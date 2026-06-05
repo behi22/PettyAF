@@ -18,16 +18,40 @@ export default function LiveCalls({ live, cases, onChanged, notify }) {
   const focused = live.calls.find((c) => ['dialing', 'talking', 'analyzing'].includes(c.phase)) || live.calls[0] || null
   const focusedCase = focused ? cases.find((c) => c.id === focused.caseId) : null
   const [autoScroll, setAutoScroll] = useState(true)
+  const [calls, setCalls] = useState([])
+  const [sel, setSel] = useState(0)
   const scrollRef = useRef(null)
   // real backend names the live field partialTranscript (plan 06 section 7.3); mock uses transcript
   const lines = focused ? transcriptLines(focused.partialTranscript ?? focused.transcript) : []
   const sentimentPct = focused ? (focused.sentimentPct ?? 0) : 0
+  const selectedCall = calls[sel] || null
 
   useEffect(() => {
     if (autoScroll && scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
   }, [focused?.callId, lines.length, autoScroll])
+
+  // load this case's recordings; refetch when the call completes so the recording appears
+  useEffect(() => {
+    let alive = true
+    setCalls([])
+    setSel(0)
+    const id = focusedCase?.id
+    if (!id) return
+    api
+      .getCaseCalls(id)
+      .then((cs) => {
+        if (!alive) return
+        const list = cs || []
+        setCalls(list)
+        setSel(Math.max(0, list.length - 1))
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [focusedCase?.id, focused?.phase])
 
   const persona = focused ? PERSONAS[focused.personaKey] : null
   const relentlessOn = !!focusedCase?.relentless?.enabled
@@ -47,7 +71,11 @@ export default function LiveCalls({ live, cases, onChanged, notify }) {
           <span className={`rec-dot ${focused && focused.phase !== 'done' ? 'rec-live' : ''}`} />
           <span className="rec-text">REC {focused && focused.phase !== 'done' ? 'LIVE' : 'IDLE'}</span>
         </div>
-        <InfoCell label="PHASE" value={focused ? PHASE_LABEL[focused.phase] : 'AWAITING ORDERS'} accent />
+        <InfoCell
+          label="PHASE"
+          value={focused ? (focused.windingDown ? 'WINDING DOWN' : PHASE_LABEL[focused.phase]) : 'AWAITING ORDERS'}
+          accent
+        />
       </div>
 
       {/* relentless banner */}
@@ -134,7 +162,7 @@ export default function LiveCalls({ live, cases, onChanged, notify }) {
         {/* center column */}
         <Panel
           className="transcript-panel"
-          title="LIVE TRANSCRIPT"
+          title="TRANSCRIPT"
           right={
             <button className="link-btn" onClick={() => setAutoScroll(!autoScroll)}>
               AUTO-SCROLL: {autoScroll ? 'ON' : 'OFF'} <span className={`mini-dot ${autoScroll ? 'mini-dot-on' : ''}`} />
@@ -144,7 +172,7 @@ export default function LiveCalls({ live, cases, onChanged, notify }) {
           <div className="transcript" ref={scrollRef}>
             {lines.length === 0 && (
               <p className="muted transcript-empty">
-                {focused ? 'Line is ringing. Transcript lands here the moment someone speaks.' : 'No active call. The phones rest. The debts do not.'}
+                {focused ? 'The call is live. The transcript posts here after the call ends.' : 'No active call. The phones rest. The debts do not.'}
               </p>
             )}
             {lines.map((l, i) => (
@@ -156,8 +184,7 @@ export default function LiveCalls({ live, cases, onChanged, notify }) {
             ))}
           </div>
           <div className="transcript-foot">
-            <span className={`rec-dot ${focused && focused.phase === 'talking' ? 'rec-live' : ''}`} /> LIVE
-            <span className="muted"> Transcript updates in real time</span>
+            <span className="muted">Transcript posts when the call ends.</span>
           </div>
         </Panel>
 
@@ -214,19 +241,29 @@ export default function LiveCalls({ live, cases, onChanged, notify }) {
             <p className="micro">{focused ? sentimentCaption(sentimentPct) : 'Awaiting a victim.'}</p>
           </Panel>
 
-          <Panel title={`EXHIBIT A: ${focusedCase ? focusedCase.reason.toUpperCase().slice(0, 18) : 'RECORDING'}`}>
-            {focusedCase?.lastCall?.recordingUrl ? (
-              <audio controls src={focusedCase.lastCall.recordingUrl} className="audio" />
+          <Panel
+            title={`EXHIBIT A: ${focusedCase ? focusedCase.debtorName.toUpperCase().slice(0, 18) : 'RECORDING'}`}
+            right={
+              calls.length > 1 ? (
+                <select className="call-select" value={sel} onChange={(e) => setSel(Number(e.target.value))}>
+                  {calls.map((c, i) => (
+                    <option key={c.callId || i} value={i}>
+                      Call {c.callNumber}
+                      {c.durationSec ? ` - ${c.durationSec}s` : ''}
+                    </option>
+                  ))}
+                </select>
+              ) : null
+            }
+          >
+            {selectedCall?.recordingUrl ? (
+              <audio controls src={selectedCall.recordingUrl} className="audio" />
             ) : (
               <div className="exhibit">
-                <button
-                  className="play-btn"
-                  onClick={() => notify('Recording lands here when the call completes and the backend wires recordingUrl.', 'info')}
-                >
-                  &#9654;
-                </button>
                 <Waveform />
-                <span className="micro muted">00:00 / --:--</span>
+                <span className="micro muted">
+                  {calls.length ? 'Recording posts a few seconds after the call completes.' : 'No recordings yet for this case.'}
+                </span>
               </div>
             )}
           </Panel>

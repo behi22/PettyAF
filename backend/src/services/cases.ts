@@ -1,6 +1,7 @@
 import { agentIdFor } from '../config/env';
 import { staging } from '../clients/stagingClient';
 import { ApiError } from '../middleware/error';
+import { clearRelentless } from '../engine/campaignEngine';
 import { buildLeadPayload, leadToCase, type CreateCaseInput } from '../domain/mappers';
 import type { Case, CallResult, PafStatus, QualAnswers } from '../types';
 
@@ -67,6 +68,41 @@ export async function buildLastCall(leadId: string, lead?: any): Promise<CallRes
   };
 }
 
+export interface CaseCall {
+  callNumber: number;
+  callId: string;
+  recordingUrl: string | null;
+  transcript: string | null;
+  summary: string | null;
+  durationSec: number | null;
+  endedReason: string | null;
+  endedAt: string | null;
+}
+
+// All phone calls for a case, oldest first, numbered (call 1, call 2, ... for relentless).
+// Powers the recording dropdown.
+export async function listCaseCalls(leadId: string): Promise<CaseCall[]> {
+  const acts = await staging.getLeadActivities(leadId);
+  const items: any[] = acts?.items ?? acts?.data ?? [];
+  const phones = items
+    .filter((a) => a.activityType === 'phone' && (a.metadata?.transcript || a.callLog))
+    .sort((a, b) => Date.parse(a.createdAt || 0) - Date.parse(b.createdAt || 0));
+  return phones.map((a, i) => {
+    const log = a.callLog || {};
+    const meta = a.metadata || {};
+    return {
+      callNumber: i + 1,
+      callId: log.externalCallId || log.id || a.id,
+      recordingUrl: log.recordingUrl || meta.recordingUrl || null,
+      transcript: meta.transcript || log.transcript || null,
+      summary: log.summary || null,
+      durationSec: log.durationSeconds ?? meta.duration ?? null,
+      endedReason: log.outcome || meta.endedReason || null,
+      endedAt: a.createdAt || null,
+    };
+  });
+}
+
 function extractQual(lead: any): QualAnswers | null {
   const qs = lead?.qualificationSummary;
   if (!qs || typeof qs !== 'object' || Object.keys(qs).length === 0) return null;
@@ -86,6 +122,11 @@ function extractQual(lead: any): QualAnswers | null {
 export async function patchStatus(id: string, status: PafStatus): Promise<Case> {
   const lead = await staging.getLead(id);
   const cf = lead.customFields || {};
-  const updated = await staging.patchLead(id, { customFields: { ...cf, paf_status: status } });
-  return leadToCase(updated?.id ? updated : { ...lead, customFields: { ...cf, paf_status: status } });
+  const terminal = status === 'SETTLED' || status === 'WRITTEN_OFF';
+  const newCf: Record<string, unknown> = { ...cf, paf_status: status };
+  if (terminal) newCf.relentless_enabled = false; // settled/written-off stops relentless
+  if (status === 'OPEN') newCf.relentless_count = 0; // reopen resets the counter (plan 13)
+  const updated = await staging.patchLead(id, { customFields: newCf });
+  if (terminal || status === 'OPEN') clearRelentless(id);
+  return leadToCase(updated?.id ? updated : { ...lead, customFields: newCf });
 }

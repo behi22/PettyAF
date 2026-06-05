@@ -25,6 +25,9 @@ r.get(
   }),
 );
 
+// All calls for a case (recording dropdown: call 1, call 2, ...).
+r.get('/:id/calls', wrap(async (req, res) => res.json(await cases.listCaseCalls(req.params.id))));
+
 r.patch(
   '/:id',
   wrap(async (req, res) => {

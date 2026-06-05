@@ -24,10 +24,14 @@ class LiveRegistry {
 
   all(): LiveCall[] {
     const now = Date.now();
-    return [...this.byCall.values()].map((c) => ({
-      ...c,
-      durationSec: c.startedAt ? Math.max(0, Math.floor((now - Date.parse(c.startedAt)) / 1000)) : c.durationSec,
-    }));
+    return [...this.byCall.values()].map((c) => {
+      // Once a call is done/failed its timer is frozen at the stored final duration.
+      const ticking = c.phase !== 'done' && c.phase !== 'failed';
+      return {
+        ...c,
+        durationSec: ticking && c.startedAt ? Math.max(0, Math.floor((now - Date.parse(c.startedAt)) / 1000)) : c.durationSec,
+      };
+    });
   }
 
   size(): number {

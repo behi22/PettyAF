@@ -139,20 +139,71 @@ export function pauseCampaign(campaignId: string): void {
   console.log(`[engine] campaign ${campaignId} paused`);
 }
 
-// Emergency stop. Synchronous: sets the kill flag before any await, then clears
-// every timer. No new call is placed after this. Connected calls cannot be
-// force-terminated by the platform; they end on their own.
+// Emergency stop. Synchronous part runs before any await: kill flag + stop scheduling +
+// stop relentless redials. In-flight pollers are KEPT so connected calls resolve to done
+// on their own (no platform hangup API) and stop ticking once they actually end. Then,
+// fire-and-forget, any DEPLOYED case is reverted to OPEN so it leaves "active" and lands
+// in the archive (re-deployable).
 export function stopAll(): void {
   globalStop = true;
   for (const s of states.values()) {
     s.stopped = true;
     s.runState = 'paused';
-    clearTimers(s);
+    if (s.tick) {
+      clearInterval(s.tick);
+      s.tick = null;
+    }
+    for (const f of s.inFlight.values()) liveRegistry.update(f.callId, { windingDown: true });
   }
   for (const t of redialTimers.values()) clearTimeout(t);
   redialTimers.clear();
   queuedInfo.clear();
-  console.log('[engine] EMERGENCY STOP: all campaigns halted');
+  relentlessLeads.clear(); // emergency stop kills relentless for good (no auto-resume)
+  console.log('[engine] EMERGENCY STOP: new dialing halted; relentless off; connected calls winding down');
+  clearActiveStateOnStop().catch((e) => console.error('[engine] stop-clear failed', (e as Error).message));
+}
+
+// Clear "active" on emergency stop: any DEPLOYED lead goes back to OPEN, and relentless is
+// disabled (persisted flag false) so cases leave the Active list and stop redialing. A call
+// genuinely still connected overwrites paf_status with its real outcome when finishCall runs.
+async function clearActiveStateOnStop(): Promise<void> {
+  const leads = (await staging.listLeads('?source=PettyAF&limit=100')).items || [];
+  for (const l of leads) {
+    const cf = l.customFields || {};
+    const wasDeployed = cf.paf_status === 'DEPLOYED';
+    const wasRelentless = cf.relentless_enabled === true || cf.relentless_enabled === 'true';
+    if (!wasDeployed && !wasRelentless) continue;
+    await staging
+      .patchLead(l.id, {
+        customFields: { ...cf, paf_status: wasDeployed ? 'OPEN' : cf.paf_status, relentless_enabled: false },
+      })
+      .catch((e) => console.error('[engine] stop-clear patch failed', (e as Error).message));
+  }
+}
+
+// Stop a single case's relentless loop (used when a case is settled/written off).
+export function clearRelentless(leadId: string): void {
+  relentlessLeads.delete(leadId);
+  const t = redialTimers.get(leadId);
+  if (t) {
+    clearTimeout(t);
+    redialTimers.delete(leadId);
+  }
+  queuedInfo.delete(leadId);
+}
+
+// Best-effort: pull whatever transcript staging has for a lead's latest phone call.
+async function fetchTranscript(leadId: string): Promise<string | null> {
+  try {
+    const acts = await staging.getLeadActivities(leadId);
+    const items: any[] = acts?.items ?? acts?.data ?? [];
+    const phone = items
+      .filter((a) => a.activityType === 'phone' && a.metadata?.transcript)
+      .sort((a, b) => Date.parse(b.createdAt || 0) - Date.parse(a.createdAt || 0))[0];
+    return phone?.metadata?.transcript || null;
+  } catch {
+    return null;
+  }
 }
 
 // Single-case deploy for the main.md demo spine (POST /api/cases/:id/deploy).
@@ -188,12 +239,13 @@ function makeState(campaignId: string, settings: CampaignSettings): EngineState 
   };
 }
 
+// Stops scheduling new calls (the tick). Deliberately keeps in-flight pollers running so
+// connected calls still resolve to done (the platform has no hangup API).
 function clearTimers(s: EngineState): void {
   if (s.tick) {
     clearInterval(s.tick);
     s.tick = null;
   }
-  for (const f of s.inFlight.values()) clearInterval(f.pollTimer);
 }
 
 function complete(s: EngineState): void {
@@ -352,13 +404,21 @@ async function deploy(s: EngineState, lead: any): Promise<void> {
 // Re-entrancy guard: a slow status request (up to httpTimeoutMs) can outlast the poll
 // interval, so skip starting a new request for a call that already has one in flight.
 const pollingNow = new Set<string>();
+const MAX_CALL_MS = 5 * 60 * 1000; // safety net: force-finish a call that never reports ended
 
 async function pollCall(s: EngineState, leadId: string, callId: string): Promise<void> {
   if (pollingNow.has(callId)) return;
   pollingNow.add(callId);
   try {
     const st = await getCallStatus(callId);
-    if (!st) return; // transient; retry next interval
+    if (!st) {
+      // transient poll failure; force-finish only if the call has run absurdly long
+      const start = ledger.get(callId)?.startedAt ?? Date.now();
+      if (Date.now() - start > MAX_CALL_MS) {
+        await finishCall(s, leadId, callId, { status: 'ended', endedReason: 'silence-timed-out' });
+      }
+      return;
+    }
     const status = (st.status || '').toLowerCase();
     if (status === 'queued' || status === 'ringing') {
       liveRegistry.update(callId, { phase: 'dialing' });
@@ -366,6 +426,12 @@ async function pollCall(s: EngineState, leadId: string, callId: string): Promise
     }
     if (status === 'in-progress') {
       liveRegistry.update(callId, { phase: 'talking' });
+      // best-effort live transcript (usually only available once the call ends, but try)
+      fetchTranscript(leadId)
+        .then((t) => {
+          if (t) liveRegistry.update(callId, { partialTranscript: t });
+        })
+        .catch(() => {});
       return;
     }
     if (status === 'ended' || status === 'completed' || status === 'failed' || st.endedReason) {
@@ -384,56 +450,58 @@ async function finishCall(s: EngineState, leadId: string, callId: string, st: En
   }
   liveRegistry.update(callId, { phase: 'analyzing' });
 
-  try {
-    const lead = await staging.getLead(leadId).catch(() => null);
-    const qual = lead ? extractQual(lead) : null;
-    const newStatus = classifyStatus(st.endedReason, qual);
-    const cf = (lead?.customFields as Record<string, unknown>) || {};
-    const rel = s.relentless.get(leadId) || { callCount: 0, consecutiveErrors: 0, halted: false };
+  const start = ledger.get(callId)?.startedAt ?? Date.now();
+  const durationSec = Math.max(0, Math.floor((Date.now() - start) / 1000));
+  const rel = s.relentless.get(leadId) || { callCount: 0, consecutiveErrors: 0, halted: false };
 
+  // Enrich from staging (best-effort). Classification falls back to endedReason alone.
+  let newStatus: PafStatus = classifyStatus(st.endedReason, null);
+  let transcript: string | null = null;
+  try {
+    const lead = await staging.getLead(leadId);
+    newStatus = classifyStatus(st.endedReason, extractQual(lead));
+    transcript = await fetchTranscript(leadId);
+    const cf = (lead?.customFields as Record<string, unknown>) || {};
+    // Rehydrate per-case relentless from the persisted flag so a redial still happens after
+    // a backend restart wiped the in-memory set (the real cause of "doesn't call back").
+    if (cf.relentless_enabled === true || cf.relentless_enabled === 'true') relentlessLeads.add(leadId);
     await staging
       .patchLead(leadId, {
-        customFields: {
-          ...cf,
-          paf_status: newStatus,
-          ever_completed_call: true,
-          relentless_count: rel.callCount,
-        },
+        customFields: { ...cf, paf_status: newStatus, ever_completed_call: true, relentless_count: rel.callCount },
       })
       .catch((e) => console.error('[engine] patch on finish failed', (e as Error).message));
-
-    const start = ledger.get(callId)?.startedAt ?? Date.now();
-    ledger.complete(callId, { endedAt: Date.now(), durationSec: Math.floor((Date.now() - start) / 1000), outcome: newStatus });
-    liveRegistry.update(callId, { phase: 'done', partialTranscript: st.transcript || null });
-    console.log(`[engine] call ${callId} ended (${st.endedReason || 'n/a'}) -> ${newStatus}`);
-
-    if (st.endedReason === 'technical-error') rel.consecutiveErrors += 1;
-    else rel.consecutiveErrors = 0;
-    if (rel.consecutiveErrors >= 2) rel.halted = true;
-    s.relentless.set(leadId, rel);
-
-    dialState.set(leadId, 'idle');
-    setTimeout(() => liveRegistry.remove(callId), 5000); // let the FE see 'done' briefly
-
-    // Campaign-mode relentless is driven by the tick loop. Per-case relentless (the FE
-    // toggle) is driven here, since manual cases have no ticking campaign state.
-    const wantPerCase = relentlessLeads.has(leadId);
-    const softCapped = env.relentlessSoftCap > 0 && rel.callCount >= env.relentlessSoftCap;
-    if (wantPerCase && !globalStop && !TERMINAL_STATUSES.includes(newStatus) && !rel.halted && !softCapped) {
-      queuedInfo.set(leadId, { debtorName: (lead as any)?.fullName || '' });
-      const t = setTimeout(() => {
-        redialTimers.delete(leadId);
-        queuedInfo.delete(leadId);
-        if (globalStop || !relentlessLeads.has(leadId)) return;
-        manualDeploy(leadId).catch((e) => console.error('[engine] relentless redial failed', e));
-      }, env.redialGapMs);
-      redialTimers.set(leadId, t);
-    } else {
-      queuedInfo.delete(leadId);
-    }
   } catch (e) {
-    console.error('[engine] finishCall error', (e as Error).message);
-    dialState.set(leadId, 'idle');
+    console.error('[engine] finishCall enrich error', (e as Error).message);
+  }
+
+  // ALWAYS record the ledger so the dashboard recent-calls populates even if enrich failed.
+  ledger.complete(callId, { endedAt: Date.now(), durationSec, outcome: newStatus });
+  liveRegistry.update(callId, { phase: 'done', durationSec, partialTranscript: transcript, windingDown: false });
+  console.log(`[engine] call ${callId} ended (${st.endedReason || 'n/a'}) -> ${newStatus} ${durationSec}s`);
+
+  if (st.endedReason === 'technical-error') rel.consecutiveErrors += 1;
+  else rel.consecutiveErrors = 0;
+  if (rel.consecutiveErrors >= 2) rel.halted = true;
+  s.relentless.set(leadId, rel);
+
+  dialState.set(leadId, 'idle');
+  setTimeout(() => liveRegistry.remove(callId), 20000); // keep the completed call on the HUD a while
+
+  // Campaign-mode relentless is driven by the tick loop. Per-case relentless (the FE toggle)
+  // is driven here, since manual cases have no ticking campaign state.
+  const wantPerCase = relentlessLeads.has(leadId);
+  const softCapped = env.relentlessSoftCap > 0 && rel.callCount >= env.relentlessSoftCap;
+  if (wantPerCase && !globalStop && !TERMINAL_STATUSES.includes(newStatus) && !rel.halted && !softCapped) {
+    queuedInfo.set(leadId, { debtorName: '' });
+    const t = setTimeout(() => {
+      redialTimers.delete(leadId);
+      queuedInfo.delete(leadId);
+      if (globalStop || !relentlessLeads.has(leadId)) return;
+      manualDeploy(leadId).catch((e) => console.error('[engine] relentless redial failed', e));
+    }, env.redialGapMs);
+    redialTimers.set(leadId, t);
+  } else {
+    queuedInfo.delete(leadId);
   }
 }
 

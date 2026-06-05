@@ -37,6 +37,11 @@ export default function Dashboard({ cases, onDeploy, onNewCase, onOpenArchive })
   }, [cases])
 
   const k = dash?.kpis
+  // Active = a collector is deployed / on a call, OR relentless mode is keeping the case in
+  // pursuit. It leaves Active only when settled/written-off or emergency-stopped.
+  const active = cases.filter(
+    (c) => c.status === 'DEPLOYED' || (c.relentless?.enabled && !['SETTLED', 'WRITTEN_OFF'].includes(c.status)),
+  )
 
   return (
     <div className="dashboard">
@@ -67,8 +72,8 @@ export default function Dashboard({ cases, onDeploy, onNewCase, onOpenArchive })
           </span>
         }
       >
-        {cases.length === 0 ? (
-          <p className="muted empty-line">No outstanding debts. Either you have great friends or terrible memory.</p>
+        {active.length === 0 ? (
+          <p className="muted empty-line">No collectors deployed right now. Open a case and deploy one from the Archive.</p>
         ) : (
           <table className="case-table">
             <thead>
@@ -80,13 +85,11 @@ export default function Dashboard({ cases, onDeploy, onNewCase, onOpenArchive })
                 <th>DAYS DELINQUENT</th>
                 <th>COLLECTOR</th>
                 <th>STATUS</th>
-                <th></th>
               </tr>
             </thead>
             <tbody>
-              {cases.map((c) => {
+              {active.map((c) => {
                 const days = daysDelinquent(c.sinceDate)
-                const deployable = !['SETTLED', 'WRITTEN_OFF', 'DEPLOYED'].includes(c.status)
                 return (
                   <tr key={c.id}>
                     <td className="td-red mono">{caseNumber(c.id)}</td>
@@ -100,13 +103,6 @@ export default function Dashboard({ cases, onDeploy, onNewCase, onOpenArchive })
                     <td className="td-muted">{PERSONAS[c.personaKey]?.name || c.personaKey}</td>
                     <td>
                       <Stamp status={c.status} />
-                    </td>
-                    <td>
-                      {deployable && (
-                        <button className="btn-red btn-small" onClick={() => onDeploy(c.id)}>
-                          DEPLOY
-                        </button>
-                      )}
                     </td>
                   </tr>
                 )

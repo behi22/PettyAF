@@ -96,4 +96,5 @@ export interface LiveCall {
   durationSec: number;
   callCount: number;
   partialTranscript: string | null;
+  windingDown?: boolean; // emergency stop pressed; call ending on its own (no hangup API)
 }

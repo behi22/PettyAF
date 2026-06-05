@@ -23,6 +23,7 @@ async function http(method, path, body) {
 const real = {
   getCases: () => http('GET', '/api/cases'),
   getCase: (id) => http('GET', `/api/cases/${id}`),
+  getCaseCalls: (id) => http('GET', `/api/cases/${id}/calls`),
   createCase: (body) => http('POST', '/api/cases', body),
   patchCase: (id, body) => http('PATCH', `/api/cases/${id}`, body),
   deploy: (id) => http('POST', `/api/cases/${id}/deploy`),

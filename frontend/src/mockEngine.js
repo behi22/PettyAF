@@ -389,6 +389,23 @@ export const api = {
     return clone(getCase(id))
   },
 
+  async getCaseCalls(id) {
+    const c = getCase(id)
+    if (!c.lastCall) return []
+    return clone([
+      {
+        callNumber: c.relentless?.callCount || 1,
+        callId: c.lastCall.callId,
+        recordingUrl: c.lastCall.recordingUrl || null,
+        transcript: c.lastCall.transcript || null,
+        summary: c.lastCall.summary || null,
+        durationSec: c.lastCall.durationSec ?? null,
+        endedReason: c.lastCall.endedReason || null,
+        endedAt: null,
+      },
+    ])
+  },
+
   async createCase(body) {
     const c = seedCase({
       ...body,

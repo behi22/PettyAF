@@ -79,34 +79,48 @@ export async function getDashboard(): Promise<Dashboard> {
     }
   }
 
-  // recentCalls from the in-memory ledger, enriched from the leads we just fetched
-  const byLead = new Map(leads.map((l: any) => [l.id, l]));
-  const recentCalls = ledger
-    .all()
-    .filter((e) => e.endedAt)
-    .sort((a, b) => (b.endedAt || 0) - (a.endedAt || 0))
+  // recentCalls derived from staging leads (robust across backend restarts), newest first.
+  // Per-call durations come from the in-memory ledger when available this session.
+  const ledgerDur = new Map<string, number>();
+  for (const e of ledger.all()) if (e.endedAt && e.durationSec != null) ledgerDur.set(e.leadId, e.durationSec);
+  const recentCalls = leads
+    .filter((l: any) => {
+      const c = l.customFields || {};
+      return c.ever_completed_call === true || c.ever_completed_call === 'true';
+    })
+    .sort(
+      (a: any, b: any) =>
+        Date.parse(b.lastContactDate || b.updatedAt || 0) - Date.parse(a.lastContactDate || a.updatedAt || 0),
+    )
     .slice(0, 12)
-    .map((e) => {
-      const l: any = byLead.get(e.leadId);
-      const cf = l?.customFields || {};
+    .map((l: any) => {
+      const cf = l.customFields || {};
       return {
-        callId: e.callId,
-        caseId: e.leadId,
-        debtorName: l?.fullName || '',
-        personaKey: e.personaKey,
+        callId: l.id,
+        caseId: l.id,
+        debtorName: l.fullName || '',
+        personaKey: cf.persona_key || 'child',
         amount: Number(cf.debt_amount || 0),
-        status: cf.paf_status || e.outcome || 'OPEN',
-        durationSec: e.durationSec || 0,
-        endedAt: new Date(e.endedAt as number).toISOString(),
+        status: cf.paf_status || 'OPEN',
+        durationSec: ledgerDur.get(l.id) || 0,
+        endedAt: l.lastContactDate || l.updatedAt || new Date().toISOString(),
       };
     });
+
+  // callsMade: prefer the exact session ledger; fall back to staging so it is never 0 when
+  // completed calls exist (relentless_count is the per-lead attempt counter we patch on finish).
+  const callsFromLeads = leads.reduce(
+    (s: number, l: any) => s + Number((l.customFields || {}).relentless_count || 0),
+    0,
+  );
+  const callsMade = Math.max(ledger.callsMade(), callsFromLeads, completed);
 
   return {
     kpis: {
       totalOutstanding: round2(totalOutstanding),
       totalCollected: round2(totalCollected),
       totalPromised: round2(totalPromised),
-      callsMade: ledger.callsMade(),
+      callsMade,
       talkMinutes: Math.round(ledger.talkSeconds() / 60),
       activeCases,
       friendshipsAtRisk,

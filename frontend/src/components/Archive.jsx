@@ -1,16 +1,49 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { api } from '../api.js'
 import { Panel, Stamp, Waveform } from './Widgets.jsx'
 import { PERSONAS, caseNumber, money, daysDelinquent, transcriptLines } from '../util.js'
 
 export default function Archive({ cases, onChanged, notify }) {
   const [openId, setOpenId] = useState(null)
+  const [calls, setCalls] = useState([])
+  const [sel, setSel] = useState(0)
   const open = cases.find((c) => c.id === openId)
+  const selectedCall = calls[sel] || null
+
+  // load the case's call history (recordings + transcripts) when a file is opened
+  useEffect(() => {
+    let alive = true
+    setCalls([])
+    setSel(0)
+    if (!openId) return
+    api
+      .getCaseCalls(openId)
+      .then((cs) => {
+        if (!alive) return
+        const list = cs || []
+        setCalls(list)
+        setSel(Math.max(0, list.length - 1)) // default to the most recent call
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [openId])
 
   const act = async (id, status) => {
     try {
       await api.patchCase(id, { status })
       onChanged()
+    } catch (e) {
+      notify(e.message)
+    }
+  }
+
+  const deploy = async (id) => {
+    try {
+      await api.deploy(id)
+      onChanged()
+      notify('Collector deployed. May God have mercy.', 'info')
     } catch (e) {
       notify(e.message)
     }
@@ -90,6 +123,11 @@ export default function Archive({ cases, onChanged, notify }) {
               )}
 
               <div className="file-actions">
+                {!['SETTLED', 'WRITTEN_OFF', 'DEPLOYED'].includes(open.status) && (
+                  <button className="btn-red" onClick={() => deploy(open.id)}>
+                    DEPLOY COLLECTOR
+                  </button>
+                )}
                 {!['SETTLED'].includes(open.status) && (
                   <button className="btn-green" onClick={() => act(open.id, 'SETTLED')}>
                     MARK SETTLED
@@ -116,27 +154,44 @@ export default function Archive({ cases, onChanged, notify }) {
             </div>
 
             <div>
+              {calls.length > 1 && (
+                <div className="recordings-head">
+                  <span className="panel-title">CALL</span>
+                  <select className="call-select" value={sel} onChange={(e) => setSel(Number(e.target.value))}>
+                    {calls.map((c, i) => (
+                      <option key={c.callId || i} value={i}>
+                        Call {c.callNumber}
+                        {c.durationSec ? ` - ${c.durationSec}s` : ''}
+                        {c.endedReason ? ` - ${c.endedReason}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <span className="panel-title">CALL SUMMARY</span>
-              <p className="summary">{open.lastCall?.summary || 'No completed calls yet. The debtor sleeps peacefully. For now.'}</p>
+              <p className="summary">
+                {selectedCall?.summary || open.lastCall?.summary || 'No completed calls yet. The debtor sleeps peacefully. For now.'}
+              </p>
 
               <span className="panel-title">TRANSCRIPT</span>
               <div className="transcript transcript-small">
-                {transcriptLines(open.lastCall?.transcript).map((l, i) => (
+                {transcriptLines(selectedCall?.transcript ?? open.lastCall?.transcript).map((l, i) => (
                   <div className="tline" key={i}>
                     <span className="t-who">{l.who ? `${l.who}:` : ''}</span>
                     <span className="t-text">{l.text}</span>
                   </div>
                 ))}
-                {!open.lastCall && <p className="muted">Empty. Like their promises.</p>}
+                {calls.length === 0 && !open.lastCall && <p className="muted">Empty. Like their promises.</p>}
               </div>
 
-              <span className="panel-title">EXHIBIT A</span>
-              {open.lastCall?.recordingUrl ? (
-                <audio controls src={open.lastCall.recordingUrl} className="audio" />
+              <span className="panel-title">EXHIBIT A{selectedCall ? `: CALL ${selectedCall.callNumber}` : ''}</span>
+              {selectedCall?.recordingUrl || open.lastCall?.recordingUrl ? (
+                <audio controls src={selectedCall?.recordingUrl || open.lastCall?.recordingUrl} className="audio" />
               ) : (
                 <div className="exhibit">
                   <Waveform bars={28} />
-                  <span className="micro muted">Recording pending backend wiring.</span>
+                  <span className="micro muted">Recording posts a few seconds after the call completes.</span>
                 </div>
               )}
             </div>
