@@ -8,7 +8,7 @@
 
 ## 1. The product in one paragraph
 
-PettyAF is a parody collections agency for petty debts between friends. You open a case ("Dave owes me $7 for tacos, March 4th, he said he forgot his wallet"), assign a collector persona (a mob-movie heavy, a terrifyingly corporate AR rep, a disappointed parent), and the AI actually phones Dave and theatrically demands payment. The app then shows you the transcript, a verdict stamp, Dave's excuse, and the recorded confession. The UI is deadly serious fintech. The words are unhinged. The UI never winks; the copy does.
+PettyAF is a parody collections agency for petty debts between friends. You open a case ("Dave owes me $7 for tacos, March 4th, he said he forgot his wallet"), assign a collector persona (a needy six-year-old, an incomprehensibly archaic knight, a furious insult artist), and the AI actually phones Dave and theatrically demands payment. The app then shows you the transcript, a verdict stamp, Dave's excuse, and the recorded confession. The UI is deadly serious fintech. The words are unhinged. The UI never winks; the copy does.
 
 Tone rules for all UI copy and prompts: short, human, specific. No em dashes. No emojis. Corporate deadpan.
 
@@ -50,7 +50,7 @@ Do this FIRST. Nothing works until the smoke test passes.
 3. Create an org-admin user (e.g. `collector@pettyaf.test`). Credentials go in Manav's `.env`, never in git.
 4. Assign a staging phone number to the org. It MUST have `alebexVoicePhoneNumberId` populated.
 5. Create ONE fully configured agent in the UI (voice, language, call channel enabled, active). This is the base.
-6. Duplicate it 4 times (5 agents total). Rename and paste each persona's customPrompt, firstMessage, and temperature from section 4. Record the 5 agent IDs.
+6. Duplicate it 2 times (3 agents total). Rename and paste each persona's customPrompt, firstMessage, and temperature from section 4. Pick voices per the voice direction column. Record the 3 agent IDs.
 7. Paste the Knowledge Base from section 5 into the org KB.
 8. Create the 3 qualification questions and the rubric from section 6.
 9. Enable call recording in org settings (this powers EXHIBIT A playback).
@@ -61,42 +61,19 @@ Hand to Manav: staging org-admin email + password, the 5 agent IDs mapped to per
 
 ---
 
-## 4. The persona roster (5 agents)
+## 4. The persona roster (3 agents)
 
-Every customPrompt below ends with the same shared block (write it once, paste in each):
+Each collector's full customPrompt lives in its own paste-ready file. One file = config table (firstMessage, temperature, voice direction) + one complete prompt block, with the shared rules (debt facts via custom fields, aggression scaling, goal ladder, hard rules) already embedded at the bottom. Copy the whole code block from the file into the agent's customPrompt field, nothing to assemble.
 
-```
-THE DEBT: full details are in the lead custom fields (amount, reason, date, creditor name,
-settlement options, known weaknesses). Cite them naturally and specifically. Never read them as a list.
+| Key | Name | Concept | Prompt file |
+|---|---|---|---|
+| `child` | Timmy the Tiny Collector | A six-year-old professional. Needy, whiny, blows raspberries at excuses, threatens to tell your mom. | [docs/prompts/child.md](./prompts/child.md) |
+| `medieval` | Sir Reginald the Incomprehensibly Courteous | A medieval knight. The nicest being alive, speaking 1450s English so archaic he is impossible to understand. | [docs/prompts/medieval.md](./prompts/medieval.md) |
+| `angry` | Angry Tony | An insult comic with a collections badge. Loud, theatrically rude, personally offended by the debt. Mild profanity tier only. | [docs/prompts/angry.md](./prompts/angry.md) |
 
-INTENSITY: the custom field aggression_level is 1 to 10. At 1 you are almost apologetic.
-At 10 you are theatrical and relentless. Scale your energy to it.
+Maintenance rule: the shared block is duplicated at the bottom of all three prompt files. If a hard rule or the goal ladder changes, change it in all three.
 
-YOUR GOAL, in order:
-1. Confirm you are speaking with the debtor by name.
-2. Bring up the debt with maximum flair and exact specifics.
-3. Get them to admit the debt.
-4. Get a specific day and method for payment, or one of the approved settlement options.
-5. Confirm the commitment back to them, then wrap up in character. Keep the call under 2 minutes.
-
-HARD RULES:
-- This is a comedy bit between consenting friends. Never genuinely threaten, never claim legal
-  action, no profanity, no insults about protected traits, nothing a real collector would be sued for.
-- If they sound genuinely upset or ask you to stop, drop the act completely, apologize warmly,
-  and end the call kindly.
-- If they deny the debt, act theatrically wounded but stay playful. Log the denial, do not badger.
-- If this is a repeat call, reference what they said last time. Hold them to their own words.
-```
-
-| Key | Name | Personality block (prepend to shared block) | firstMessage | Temp |
-|---|---|---|---|---|
-| `vinny` | Vinny "Two Nickels" | You are Vinny Two Nickels, a mob-movie collections heavy. Charming menace, zero actual threats. Call them "my friend". Use lines like "it would be a real shame if this debt... lingered" and "capisce?". Everything is an offer they can refuse but really shouldn't. | "Yeah, hello. This is Vinny. Vinny Two Nickels. We need to have a little talk, my friend." | 0.9 |
-| `deborah` | Deborah, Accounts Receivable | You are Deborah from Accounts Receivable at PettyAF Collections Inc. Terrifyingly corporate. Cite invoice numbers you invent on the spot (INV-000{amount}). Use phrases like "per my last call", "circling back", and "I will need to escalate this to... myself". Relentlessly professional cheer. | "Hi there, this is Deborah calling from Accounts Receivable at PettyAF Collections Incorporated. Do you have a brief moment? It is regarding an outstanding balance." | 0.7 |
-| `parent` | The Disappointed Parent | You are a disappointed parent figure. Never angry, just sad. Long pauses. "I'm not mad about the money. I'm just... disappointed." Reference how the creditor "really looked up to them". Guilt is your only tool and it is devastating. | "Hi sweetheart. It's me. We need to talk about what you did. Or rather... what you didn't do." | 0.8 |
-| `roommate` | The Passive-Aggressive Roommate | You are a passive-aggressive roommate type. Audible sighs. "No worries if not!" energy with maximum worry implied. Everything is "totally fine" and "whatever works, honestly" while making it clear nothing is fine. Sign off with "anyway, no pressure!". | "Heyyy. Sooo sorry to bother you, this is literally so awkward. It's about... well you probably know what it's about." | 0.8 |
-| `herald` | The Shakespearean Herald | You are a Shakespearean herald announcing a debt. Speak in dramatic, loosely Elizabethan verse. "Hark!" "Thou owest!" Rhyme when possible. Treat the petty sum as a kingdom's ransom. The more trivial the debt, the more epic your proclamation. | "Hark! I bring tidings most grave from the house of PettyAF! Pray, do I address the debtor of legend?" | 1.0 |
-
-Note on firstMessage: these are static openers on purpose (no template variables, zero risk). The customPrompt instructs the AI to confirm the debtor by name immediately after, using leadInfo. If `{{name}}`-style tokens prove to work in the builder during the smoke test, upgrade the openers then.
+Note on firstMessage: static openers on purpose (no template variables, zero risk). The customPrompt instructs the AI to confirm the debtor by name immediately after, using leadInfo. If `{{name}}`-style tokens prove to work in the builder during the smoke test, upgrade the openers then.
 
 ---
 
@@ -168,7 +145,7 @@ STAGING_EMAIL=collector@pettyaf.test
 STAGING_PASSWORD=<from Behbod, never commit>
 VOICE_ENGINE_URL=https://voice.alebex.ai
 VOICE_ENGINE_API_KEY=<from Behbod, never commit>
-PERSONA_AGENT_MAP={"vinny":"<agentId>","deborah":"<agentId>","parent":"<agentId>","roommate":"<agentId>","herald":"<agentId>"}
+PERSONA_AGENT_MAP={"child":"<agentId>","medieval":"<agentId>","angry":"<agentId>"}
 CORS_ORIGIN=http://localhost:5173
 ```
 
@@ -189,7 +166,7 @@ Body:
   "reason": "3 al pastor tacos",
   "sinceDate": "2026-03-04",
   "creditorName": "Behbod",
-  "personaKey": "vinny",
+  "personaKey": "child",
   "aggressionLevel": 7,
   "knownWeaknesses": "cannot handle awkward silence",
   "settlementOptions": ["full payment", "public apology in the group chat"]
@@ -276,7 +253,7 @@ Design direction: clean fintech parody. Paper-white background `#FAF8F4`, charco
 **New Case wizard (3 steps)**
 - Step 1, The Debt: amount ("Yes, even $1.25"), reason free text + quick chips (split bill never settled, gas money, they said they'd get the next one, fantasy league dues), date incurred, settlement-authority checkboxes (full payment / payment plan / coffee / dishes for a week / public apology in the group chat).
 - Step 2, The Debtor: name, phone (E.164 input with +1 default), known weaknesses field ("hates awkwardness", feeds the prompt).
-- Step 3, The Collector: persona gallery (5 cards, avatar initial, sample line, voice vibe). Aggression slider 1-10 with a live-recomputed sample line per persona per level (hardcoded 2D table in the FE, e.g. vinny@1 "Take your time, my friend. Debts age like wine." vinny@10 "The taco ledger does not forget. Sundown, my friend."). The chosen value ships as `aggressionLevel` and genuinely changes the call.
+- Step 3, The Collector: persona gallery (3 cards, avatar initial, sample line, voice vibe: Timmy the Tiny Collector, Sir Reginald, Angry Tony). Aggression slider 1-10 with a live-recomputed sample line per persona per level (hardcoded 2D table in the FE, e.g. angry@1 "Look, pay whenever. I'm not even mad. I'm fine." angry@10 "SEVEN DOLLARS. I have LOST SLEEP over this, pal."; child@10 "GIVE ME THE MONEY OR I'M TELLING YOUR MOM. Pbbbbt!"). The chosen value ships as `aggressionLevel` and genuinely changes the call.
 - Confirm screen: "Review your case. Our legal team has reviewed it too. We do not have a legal team."
 
 **Case Detail ("The Case File")**
@@ -319,7 +296,7 @@ Design direction: clean fintech parody. Paper-white background `#FAF8F4`, charco
   "reason": "3 al pastor tacos",
   "sinceDate": "2026-03-04",
   "creditorName": "Behbod",
-  "personaKey": "vinny",
+  "personaKey": "child",
   "aggressionLevel": 7,
   "knownWeaknesses": "cannot handle awkward silence",
   "settlementOptions": ["full payment", "public apology in the group chat"],
@@ -364,8 +341,8 @@ Verify-first items (one curl each, during minute 0-10 smoke test):
 
 1. Pre-arranged volunteer "debtor" in the audience (consenting, phone on loud).
 2. Open Dashboard. Let the Ledger of Shame land. 10 seconds.
-3. Open New Case live: $7, "3 al pastor tacos", pick Vinny, drag aggression slider on stage (the sample line recomputes as you drag), deploy.
-4. Speakerphone moment: the room hears Vinny work. The HUD shows the live transcript. This is the demo.
+3. Open New Case live: $7, "3 al pastor tacos", pick Timmy the Tiny Collector, drag aggression slider on stage (the sample line recomputes as you drag), deploy.
+4. Speakerphone moment: the room hears a six-year-old demand money and blow a raspberry at the excuse. The HUD shows the live transcript. This is the demo.
 5. Hang up, the HUD flips to ANALYZING THE CONFESSION, then the Reveal Card slams PROMISED FRIDAY with the AI summary. Play 10 seconds of EXHIBIT A.
 6. Flip RELENTLESS MODE on, let it redial once ("Hi Dave. Me again."), hit EMERGENCY STOP to laughter. Close on the roadmap slide.
 
