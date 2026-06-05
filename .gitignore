@@ -1,0 +1,16 @@
+# secrets
+.env
+.env.local
+.env.*.local
+
+# dependencies / build output
+node_modules/
+dist/
+build/
+
+# editor / OS noise
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/

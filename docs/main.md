@@ -240,7 +240,7 @@ State: in-memory map `{ caseId -> { enabled, callCount, lastCallId } }`, mirrore
 
 Vite + React, NO UI framework, hand-rolled CSS. One `App.css` design system.
 
-Design direction: clean fintech parody. Paper-white background `#FAF8F4`, charcoal text `#1A1D21`, collections-red accent `#C0392B` on CTAs and stamps, manila `#F1E4C3` for case-file surfaces. Sans for UI, monospace for case numbers, stamps, and transcripts. Rubber-stamp badges: 2px solid border, slight rotation (-3deg to 2deg, vary per status), uppercase, letter-spacing.
+Design direction (REVISED 2026-06-05, supersedes the paper-white concept): dark collections-agency command center, locked to the approved Live Calls mock. Near-black background `#0A0A0B`, panel surfaces `#121215` with 1px `#26262C` borders, collections-red `#FF4438`/`#E8352E` for accents, stamps, glows, and CTAs. JetBrains Mono for everything, Archivo Black for display text (logo, banners, EMERGENCY STOP). Rubber-stamp badges: 2px solid border, slight rotation, uppercase, letter-spaced. Signature elements: pulsing REC dot, RELENTLESS MODE glow banner, block meters (UNHINGED LEVEL, RELENTLESS CALLING), cooperation-likelihood gauge, and the skull-flanked EMERGENCY STOP mega-button with hazard stripe ("FOR WHEN MERCY IS A FINANCIAL LIABILITY").
 
 ### Screens
 
@@ -364,6 +364,12 @@ Consent Roast SMS opt-in ("Reply YES to be served, or LOL to dispute"), auto-esc
 
 1. **Live call listening**: implemented as the live transcript HUD (sections 7.3 `/live` and 8 Deploy flow). True in-app audio streaming is roadmap; it needs Twilio monitoring features the platform does not expose.
 2. **RELENTLESS MODE**: no-cap 5-second redial loop with manual EMERGENCY STOP (section 7.5). The cap-free decision is deliberate and the stop conditions in 7.5 are the only guardrails.
+
+## 14.5 Build log (live, newest first)
+
+- **2026-06-05: FE prototype scaffolded and building.** `frontend/` = Vite + React 18 + plain CSS, no router/UI libs. Four screens: Dashboard, New Case wizard, Live Calls control room (per the approved dark mock, EMERGENCY STOP included), Archive. **Mock mode is default**: `src/mockEngine.js` simulates the whole backend in-browser (fake calls with streaming transcripts, relentless redials, emergency stop) so the UI runs with zero servers. Flip `VITE_USE_MOCK=false` to hit the real backend on :4000; `src/api.js` already speaks the exact routes from plan 06 section 8 (`/api/cases`, `/api/cases/:id/deploy`, `/api/cases/:id/relentless`, `/api/live`, `/api/live/stop`, `/api/dashboard`). Run: `cd frontend && npm install && npm run dev` then open http://localhost:5173.
+- **2026-06-05: staging org live.** Org `PettyAF` (`d5078339-f3b0-4cbb-a0bb-2e4e9df75f1d`), org-admin login works, KB created (`docs/07-knowledge-base.md` has the id). Login returns `data.token` NOT `data.accessToken`; KB create returns the raw entity unwrapped. **Engine URL decision: use `https://dev.voice.alebex.ai`** (the staging stack pairs with the dev engine: BexAi `deploy-staging-frontend.yml` pins `VITE_VOICE_ENGINE_URL=https://dev.voice.alebex.ai` while prod deploy pins `voice.alebex.ai`, and the voice repo's CI runs against dev.voice). Mint the `VOICE_ENGINE_API_KEY` on `dev.voice.alebex.ai/docs/keys` (+ New Key, name it `pettyaf`). Functional confirmation = verify-first B: the callId from a staging test-call must resolve on `dev.voice.alebex.ai/call/status/{id}`.
+- **2026-06-05: roster locked to 3 personas** (`child`, `medieval`, `angry`), prompts in `docs/prompts/`. Agents not yet created on staging; `PERSONA_AGENT_MAP` ids pending.
 
 ## 15. Safety notes
 
