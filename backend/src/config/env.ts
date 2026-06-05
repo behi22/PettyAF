@@ -39,7 +39,11 @@ export const env = {
     url: process.env.WEBHOOK_LEADS_INGEST_URL || '',
     key: process.env.WEBHOOK_LEADS_API_KEY || process.env.WEBHOOK_LEADS_KEY || '',
   },
-  corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  // comma-separated list, so the local dev origin and the deployed Vercel origin both pass
+  corsOrigins: (process.env.CORS_ORIGIN || 'http://localhost:5173')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean),
   maxConcurrentCalls: num('MAX_CONCURRENT_CALLS', 1),
   redialGapMs: num('REDIAL_GAP_MS', 8000),
   enginePollIntervalMs: num('ENGINE_POLL_INTERVAL_MS', 2000),

@@ -14,7 +14,7 @@ async function main(): Promise<void> {
   await staging.init(); // login at boot
 
   const app = express();
-  app.use(cors({ origin: env.corsOrigin }));
+  app.use(cors({ origin: env.corsOrigins }));
   app.use(express.json({ limit: '1mb' }));
   app.use(requestLog);
 

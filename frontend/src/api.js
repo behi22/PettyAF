@@ -5,8 +5,12 @@ import * as mock from './mockEngine.js'
 
 export const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false'
 
+// Dev: empty base, Vite proxies /api to :4000. Deployed (Vercel): set VITE_API_URL to the
+// backend's reachable URL, e.g. http://localhost:4000 when the backend runs on the demo machine.
+const API_BASE = import.meta.env.VITE_API_URL || ''
+
 async function http(method, path, body) {
-  const res = await fetch(path, {
+  const res = await fetch(API_BASE + path, {
     method,
     headers: body ? { 'Content-Type': 'application/json' } : undefined,
     body: body ? JSON.stringify(body) : undefined,
