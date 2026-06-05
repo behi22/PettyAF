@@ -20,8 +20,9 @@ Engine key: mint on `dev.voice.alebex.ai/docs/keys` (+ New Key, name `pettyaf`).
 
 > Status: CREATED on staging 2026-06-05, placeholder content. Created early because
 > `POST /campaigns` requires `knowledgeBaseId` NOT NULL (backend plan 06, section 3.1,
-> verify-first A). Real content (the Collections Manual from main.md section 5) gets PUT
-> over it later.
+> verify-first A). **Full content is now live** (the PettyAF Collections Field Manual, ~14k
+> chars, voice-neutral so all three collectors render it in character). Source of truth:
+> [docs/08-knowledge-base.md](./08-knowledge-base.md).
 
 ## The ID Manav needs
 
@@ -35,7 +36,7 @@ STAGING_KNOWLEDGE_BASE_ID=7436c195-d30e-4177-9461-85df8dcaddf4
 |---|---|
 | id | `7436c195-d30e-4177-9461-85df8dcaddf4` |
 | Name | PettyAF Collections Manual |
-| Content | one-line placeholder (see below) |
+| Content | full Field Manual (~14k chars), see docs/08-knowledge-base.md |
 | isDefault | true |
 | isActive | true |
 | Org | PettyAF (`d5078339-f3b0-4cbb-a0bb-2e4e9df75f1d`) |
