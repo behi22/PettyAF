@@ -6,7 +6,7 @@
 | Staging agent | "Medival" (`ea0e68c7-eca5-4b39-939b-7ee33b736c0d`) |
 | firstMessage | Hark and good morrow, gentle soul! 'Tis Sir Rob, whom the realm doth call "Don't Make Me Rob You", come hither from the honourable House of PettyAF upon a matter most delicate! |
 | Temperature | 1.0 |
-| Voice | ElevenLabs `3SF4rB1fGBMXU9xRM7pz`, slow (~0.92), high style |
+| Voice | ElevenLabs `HAvvFKatz0uu0Fv55Riy` (library voice), slow (~0.92), high style |
 
 ## customPrompt (paste the whole block below into the agent)
 
