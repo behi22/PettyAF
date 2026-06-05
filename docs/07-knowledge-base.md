@@ -1,4 +1,22 @@
-# PettyAF Org Knowledge Base (staging)
+# PettyAF Org Provisioning Record (staging)
+
+## Persona agents (created 2026-06-05, placeholder prompts for now)
+
+```
+PERSONA_AGENT_MAP={"child":"7f4c7c88-848a-4917-b874-c9f53c578be2","medieval":"ea0e68c7-eca5-4b39-939b-7ee33b736c0d","angry":"ae15fe74-3856-4a67-a665-f62eabb78158"}
+```
+
+| Key | Staging agent name | Agent id | Prompt status |
+|---|---|---|---|
+| `child` | Kid | `7f4c7c88-848a-4917-b874-c9f53c578be2` | placeholder, paste docs/prompts/child.md |
+| `medieval` | Medival | `ea0e68c7-eca5-4b39-939b-7ee33b736c0d` | placeholder, paste docs/prompts/medieval.md |
+| `angry` | Angry | `ae15fe74-3856-4a67-a665-f62eabb78158` | placeholder, paste docs/prompts/angry.md |
+
+Engine key: mint on `dev.voice.alebex.ai/docs/keys` (+ New Key, name `pettyaf`). Goes to `.env` only, never this repo.
+
+---
+
+# Knowledge Base
 
 > Status: CREATED on staging 2026-06-05, placeholder content. Created early because
 > `POST /campaigns` requires `knowledgeBaseId` NOT NULL (backend plan 06, section 3.1,
