@@ -19,7 +19,7 @@ const SCRIPTS = {
     lines: [
       { who: 'ai', text: "Hiiii! Is this {debtor}? It IS? I found you! I'm so good at this!" },
       { who: 'debtor', text: 'Uh. Who is this?' },
-      { who: 'ai', text: "It's PENNY. From PettyAF. I'm a PROFESSIONAL. You have my {amount}!" },
+      { who: 'ai', text: "It's KAEVON. The Venmo Vulture. From PettyAF. I'm a PROFESSIONAL. You have my {amount}!" },
       { who: 'debtor', text: '...the money for {reason}? Seriously?' },
       { who: 'ai', text: '{reason}. Like seven recesses ago. My notebook says so and my notebook NEVER lies.' },
       { who: 'debtor', text: 'Venmo is down right now.' },
@@ -156,7 +156,7 @@ state.cases = [
       callId: 'call_seed_sam',
       endedReason: 'customer-ended-call',
       durationSec: 96,
-      transcript: SCRIPTS.medieval.lines.map((l) => ({ who: l.who === 'ai' ? 'REGINALD' : 'SAM', text: l.text.replaceAll('{debtor}', 'Sam').replaceAll('{amount}', '$3.75').replaceAll('{reason}', 'the coffee') })),
+      transcript: SCRIPTS.medieval.lines.map((l) => ({ who: l.who === 'ai' ? 'ROB' : 'SAM', text: l.text.replaceAll('{debtor}', 'Sam').replaceAll('{amount}', '$3.75').replaceAll('{reason}', 'the coffee') })),
       summary: 'Sam surrendered out of confusion and committed to paying $3.75 tonight. Honour: restored.',
       sentiment: 'positive',
       outcome: 'qualified',
@@ -177,9 +177,9 @@ state.cases = [
       endedReason: 'customer-ended-call',
       durationSec: 58,
       transcript: [
-        { who: 'TONY', text: 'Twenty dollars, Dana. The concert. September.' },
+        { who: 'JUSTIN', text: 'Twenty dollars, Dana. The concert. September.' },
         { who: 'DANA', text: 'What concert? I thought YOU paid.' },
-        { who: 'TONY', text: 'Unbelievable. UNBELIEVABLE. We have the receipts, Donna.' },
+        { who: 'JUSTIN', text: 'Unbelievable. UNBELIEVABLE. We have the receipts, Donna.' },
         { who: 'DANA', text: "It's Dana. And I'm hanging up." },
       ],
       summary: 'Dana denied the debt twice and hung up. Tony remains personally offended. Case escalation recommended.',
@@ -301,7 +301,7 @@ function runGhostCall(callId, c) {
 
 function runScriptedCall(callId, c) {
   const script = SCRIPTS[c.personaKey] || SCRIPTS.angry
-  const persona = c.personaKey === 'child' ? 'PENNY' : c.personaKey === 'medieval' ? 'REGINALD' : 'TONY'
+  const persona = c.personaKey === 'child' ? 'KAEVON' : c.personaKey === 'medieval' ? 'ROB' : 'JUSTIN'
   const debtorShort = c.debtorName.split(' ')[0].toUpperCase()
   const lc = state.live.get(callId)
 

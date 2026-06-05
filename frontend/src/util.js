@@ -35,22 +35,22 @@ export function clockFromSeconds(total) {
 export const PERSONAS = {
   child: {
     key: 'child',
-    name: 'Penny the Tiny Collector',
-    shortName: 'PENNY',
+    name: 'Kaevon Venmo Vulture',
+    shortName: 'KAEVON',
     vibe: 'Six years old. A PROFESSIONAL.',
     sample: 'My notebook says you owe seven dollars. My notebook NEVER lies.',
   },
   medieval: {
     key: 'medieval',
-    name: 'Sir Reginald',
-    shortName: 'REGINALD',
+    name: 'Rob, "Don\'t Make Me Rob You"',
+    shortName: 'ROB',
     vibe: 'Impossibly kind. Impossible to understand.',
     sample: 'A debt most small there standeth between thee and thy companion.',
   },
   angry: {
     key: 'angry',
-    name: 'Angry Tony',
-    shortName: 'TONY',
+    name: 'Justin Time to Collect',
+    shortName: 'JUSTIN',
     vibe: 'Personally offended by your debt.',
     sample: 'SEVEN DOLLARS. I have LOST SLEEP over this, pal.',
   },
