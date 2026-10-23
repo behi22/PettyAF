@@ -5,9 +5,8 @@ import Logo from './Logo.jsx'
 // so the plaintext never ships in the bundle. NOTE: any client-side gate is a curtain, not a
 // vault (a determined visitor can bypass it in devtools). Good enough to keep randos out of a
 // demo link; real auth would have to be backend-enforced.
-const GATE_USER = (import.meta.env.VITE_GATE_USER || 'behbod.babai.aic@gmail.com').trim().toLowerCase()
-const GATE_HASH = (import.meta.env.VITE_GATE_PASS_HASH ||
-  'ecca90ea2d8e21f60f40492a52704f647cdec047cf495450619db9e639f062db').toLowerCase()
+const GATE_USER = (import.meta.env.VITE_GATE_USER || '').trim().toLowerCase()
+const GATE_HASH = (import.meta.env.VITE_GATE_PASS_HASH || '').toLowerCase()
 
 const DENIALS = [
   'ACCESS DENIED. Nice try, debtor.',
@@ -56,7 +55,7 @@ export default function Login({ onAuthed }) {
     await new Promise((r) => setTimeout(r, 850)) // dramatic pause
     let ok = false
     try {
-      ok = user.trim().toLowerCase() === GATE_USER && (await sha256hex(pass)) === GATE_HASH
+      ok = !!GATE_USER && !!GATE_HASH && user.trim().toLowerCase() === GATE_USER && (await sha256hex(pass)) === GATE_HASH
     } catch {
       ok = false
     }

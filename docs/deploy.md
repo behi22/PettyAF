@@ -65,7 +65,7 @@ npm install
 #   STAGING_EMAIL, STAGING_PASSWORD, STAGING_API_URL
 #   STAGING_ORGANIZATION_ID, STAGING_KNOWLEDGE_BASE_ID
 #   PERSONA_AGENT_MAP={"child":"...","medieval":"...","angry":"..."}
-#   VOICE_ENGINE_URL=https://dev.voice.alebex.ai
+#   VOICE_ENGINE_URL=...
 #   VOICE_ENGINE_API_KEY=...
 #   DIALING_ENABLED=true            # REQUIRED to place real calls
 #   CORS_ORIGIN=http://localhost:5173,https://<your-project>.vercel.app

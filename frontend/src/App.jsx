@@ -33,7 +33,7 @@ export default function App() {
     refreshCases()
   }, [refreshCases])
 
-  // live poll, 2s cadence per plan 06 section 8.3
+  // live poll, 2s cadence
   useEffect(() => {
     let alive = true
     const tick = async () => {

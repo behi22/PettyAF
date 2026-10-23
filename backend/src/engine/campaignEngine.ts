@@ -37,7 +37,7 @@ const states = new Map<string, EngineState>();
 const dialState = new Map<string, DialState>(); // global, by leadId
 let globalStop = false;
 
-// Per-case relentless (the FE's per-case toggle, main.md 7.5), independent of campaign mode.
+// Per-case relentless (the FE's per-case toggle), independent of campaign mode.
 const relentlessLeads = new Set<string>();
 const redialTimers = new Map<string, NodeJS.Timeout>();
 const queuedInfo = new Map<string, { debtorName: string }>();
@@ -206,7 +206,7 @@ async function fetchTranscript(leadId: string): Promise<string | null> {
   }
 }
 
-// Single-case deploy for the main.md demo spine (POST /api/cases/:id/deploy).
+// Single-case deploy for the demo spine (POST /api/cases/:id/deploy).
 export async function manualDeploy(leadId: string): Promise<string | undefined> {
   globalStop = false; // an explicit deploy is intent to dial; lift any prior emergency stop
   const lead = await staging.getLead(leadId);

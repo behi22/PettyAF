@@ -1,9 +1,8 @@
 # PettyAF Knowledge Base (live content)
 
-> Exact content loaded into the staging org knowledge base
-> (`7436c195-d30e-4177-9461-85df8dcaddf4`, isDefault), fed into every call as shared reference. Voice-neutral on purpose
+> Exact content loaded into the org's default knowledge base, fed into every call as shared reference. Voice-neutral on purpose
 > so all three collectors render it in character. Edit here, then PUT to
-> `/knowledge-base/7436c195-d30e-4177-9461-85df8dcaddf4` to update staging.
+> `/knowledge-base/<id>` to update it.
 
 ---
 

@@ -31,11 +31,11 @@ Signature features: a live call control room with a transcript feed and a big **
 ```
 frontend/    React + Vite UI (plain CSS, no UI framework)
 backend/     Express + TypeScript orchestrator over the Alebex platform
-docs/        Platform reference (00-05), backend plan (06), provisioning,
+docs/        The knowledge base, the deploy guide and the collector prompts
              knowledge base, deploy guide, and the collector prompts
 ```
 
-See [`docs/`](./docs) for the full build plan ([`main.md`](./docs/main.md)), the backend implementation plan, the knowledge base, and each collector's system prompt.
+See [`docs/`](./docs) for the knowledge base, the deploy guide and each collector's system prompt.
 
 ## Running locally
 
@@ -47,7 +47,7 @@ npm install
 npm run dev      # http://localhost:5173
 ```
 
-The UI runs fully against an in-browser mock by default, so you can click through the whole app with simulated calls and transcripts.
+The UI runs fully against an in-browser mock by default, so you can click through the whole app with simulated calls and transcripts. Set the login gate first (see Configuration below).
 
 **With the real backend:**
 
@@ -64,7 +64,7 @@ Then run the frontend with `VITE_USE_MOCK=false` so it talks to the backend on `
 
 All secrets live in `.env` files, which are gitignored. Copy each `.env.example` and fill in your own values. **Never commit a real `.env`.** The frontend ships no secrets to the browser; every platform call happens server-side in the backend.
 
-The app is gated by a simple login screen; the credentials are supplied via environment variables (`VITE_GATE_USER` and a SHA-256 `VITE_GATE_PASS_HASH`), never hard-coded as plaintext.
+The app is gated by a simple login screen. Its credentials come only from environment variables (`VITE_GATE_USER` and a SHA-256 `VITE_GATE_PASS_HASH`); set both in `frontend/.env` to get past it. `frontend/.env.example` shows how to make the hash.
 
 ## A note on consent
 

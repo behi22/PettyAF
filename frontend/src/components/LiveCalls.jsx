@@ -21,7 +21,7 @@ export default function LiveCalls({ live, cases, onChanged, notify }) {
   const [calls, setCalls] = useState([])
   const [sel, setSel] = useState(0)
   const scrollRef = useRef(null)
-  // real backend names the live field partialTranscript (plan 06 section 7.3); mock uses transcript
+  // real backend names the live field partialTranscript; mock uses transcript
   const lines = focused ? transcriptLines(focused.partialTranscript ?? focused.transcript) : []
   const sentimentPct = focused ? (focused.sentimentPct ?? 0) : 0
   const selectedCall = calls[sel] || null

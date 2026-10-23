@@ -1,5 +1,5 @@
-// Simulated PettyAF backend. Mirrors the contracts in docs/06-backend-implementation-plan.md
-// (sections 7 and 8) so swapping to the real Express backend is a one-flag change in api.js.
+// Simulated PettyAF backend. Mirrors the real backend's contracts
+// so swapping to the real Express backend is a one-flag change in api.js.
 // Honest-semantics notes are marked HONESTY: they mirror real platform limits on purpose.
 
 function uid() {
@@ -424,7 +424,7 @@ export const api = {
     if (body.status) {
       c.status = body.status
       if (body.status === 'OPEN') {
-        // reopen clears relentless counters (plan 06 section 13)
+        // reopen clears relentless counters
         c.relentless.callCount = 0
         c.relentless.active = false
       }
@@ -479,7 +479,7 @@ export const api = {
   },
 
   async emergencyStop() {
-    // HONESTY: mirrors plan 06 section 11. Stops all new dialing instantly;
+    // HONESTY: stops all new dialing instantly;
     // a call already on the line winds down on its own (no platform hangup API).
     state.stopped = true
     for (const [, h] of state.redials) clearTimeout(h)

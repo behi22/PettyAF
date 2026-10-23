@@ -1,6 +1,6 @@
 // API layer. Mock mode (default) runs the in-browser simulated backend so the UI is fully
 // testable with zero servers. Set VITE_USE_MOCK=false to hit the real Express backend on :4000
-// (routes per docs/06-backend-implementation-plan.md section 8).
+// (the backend routes under /api).
 import * as mock from './mockEngine.js'
 
 export const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false'

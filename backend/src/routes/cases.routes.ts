@@ -40,7 +40,7 @@ r.patch(
   }),
 );
 
-// The main.md single-case demo spine. Honors the DIALING_ENABLED safety rail.
+// The single-case demo spine. Honors the DIALING_ENABLED safety rail.
 r.post(
   '/:id/deploy',
   wrap(async (req, res) => {
@@ -49,7 +49,7 @@ r.post(
   }),
 );
 
-// Per-case relentless toggle (main.md 7.5).
+// Per-case relentless toggle.
 r.post(
   '/:id/relentless',
   wrap(async (req, res) => {

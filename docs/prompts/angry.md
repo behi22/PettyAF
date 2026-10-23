@@ -3,7 +3,6 @@
 | Setting | Value |
 |---|---|
 | Persona key | `angry` |
-| Staging agent | "Angry" (`ae15fe74-3856-4a67-a665-f62eabb78158`) |
 | firstMessage | Yeah, hi. It's Justin. Justin Time to Collect, PettyAF collections. We got a PROBLEM, you and me. |
 | Temperature | 0.85 |
 | Voice | ElevenLabs `zYcjlYFOd3taleS0gkk3`, fast (~1.1), low stability |
